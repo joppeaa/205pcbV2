@@ -3,8 +3,8 @@ Adding additional features to the legendary Peugeot 205
 
 Features:
 
-Replaces remote locking/unlocking modules
-Carfinder functionality
-Going away/coming home lighting
-Remote window openening/closing
+Replaces remote locking/unlocking modules  
+Carfinder functionality  
+Going away/coming home lighting  
+Remote window openening/closing  
 
