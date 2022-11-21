@@ -3,8 +3,13 @@ Adding additional features to the legendary Peugeot 205
 
 Features:
 
+Mirrorheating output
+Auxiliary heater output
+
+
 Replaces remote locking/unlocking modules  
 Carfinder functionality  
 Going away/coming home lighting  
-Remote window openening/closing  
+Remote window openening/closing
 
+Measures battery voltage
