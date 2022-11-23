@@ -241,6 +241,13 @@ void lockCar()
   decayFunction[2].prevTimerMillis = millis();
   decayFunction[2].run = true;
 
+  decayFunction[6].repeatCounter = 0;
+  decayFunction[6].repeatTimes = 1;                     //Writing horn
+  decayFunction[6].decayTime = 60;
+  decayFunction[6].prevTimerMillis = millis();
+  decayFunction[6].run = true;
+
+
   writeIndicators(1);
   writeLighting();
 
