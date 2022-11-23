@@ -237,7 +237,7 @@ void lockCar()
 {
   decayFunction[2].repeatCounter = 0;
   decayFunction[2].repeatTimes = 1;                     //Writing solenoid
-  decayFunction[2].decayTime = 200;
+  decayFunction[2].decayTime = 700;
   decayFunction[2].prevTimerMillis = millis();
   decayFunction[2].run = true;
 
@@ -256,11 +256,11 @@ void lockCar()
 
 void unlockCar()
 {
-  decayFunction[2].repeatCounter = 0;
-  decayFunction[2].repeatTimes = 1;                     //Writing solenoid
-  decayFunction[2].decayTime = 200;
-  decayFunction[2].prevTimerMillis = millis();
-  decayFunction[2].run = true;
+  decayFunction[3].repeatCounter = 0;
+  decayFunction[3].repeatTimes = 1;                     //Writing solenoid
+  decayFunction[3].decayTime = 200;
+  decayFunction[3].prevTimerMillis = millis();
+  decayFunction[3].run = true;
   
   writeIndicators(2);
   writeLighting();
