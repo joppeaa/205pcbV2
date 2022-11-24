@@ -8,7 +8,18 @@ const unsigned fastLoopMax = 30;
 unsigned long prevSlowLoopMillis;
 const unsigned slowLoopMax = 1000;
 
+unsigned long prevWindowMillis;
+const unsigned int windowDriveTime = 4000;
+
+bool windowRunningDown = false;
+bool windowRunningUp = false;
+
 const int LONG_PRESS_MIN  = 1300; // 1300 milliseconds
+
+#define amountOfCurrentReadings 10
+int currentReadings[amountOfCurrentReadings];
+int currentReadingIndex;
+int currentSenseAverage;
 
 struct remoteModule
 {
@@ -38,8 +49,12 @@ struct decayOutput
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  delay(100);
- 
+  
+  for (int i; i <= amountOfCurrentReadings; i ++)
+  {
+    currentReadings[i] = 4095;
+  }
+  
   pinMode(rcIn3Pin, INPUT_PULLDOWN);                                //433 MHz module inputs
   pinMode(rcIn2Pin, INPUT_PULLDOWN);
   pinMode(rcIn1Pin, INPUT_PULLDOWN);
@@ -71,7 +86,8 @@ void setup() {
 
   pinMode(hBridgeCurrentSensInPin, INPUT);
 
-  writeoutputsLOW();                                                  //Writing all outputs LOW
+  writeoutputsLOW();                                          //Writing all outputs LOW
+  delay(400);                                                  
   
   buttonNr[0].modulePin = rcIn0Pin;
   buttonNr[1].modulePin = rcIn1Pin;
@@ -113,9 +129,11 @@ void loop()
     
     checkforLock();
     checkforUnlock();
-   
+    //windowControl();
+
     carFinderHandler();
-    Serial.println(analogRead(keyInPin));
+
+    
 
     Serial.print("D0 value: ");
     Serial.println(digitalRead(15));
@@ -237,7 +255,7 @@ void lockCar()
 {
   decayFunction[2].repeatCounter = 0;
   decayFunction[2].repeatTimes = 1;                     //Writing solenoid
-  decayFunction[2].decayTime = 700;
+  decayFunction[2].decayTime = 400;
   decayFunction[2].prevTimerMillis = millis();
   decayFunction[2].run = true;
 
@@ -258,7 +276,7 @@ void unlockCar()
 {
   decayFunction[3].repeatCounter = 0;
   decayFunction[3].repeatTimes = 1;                     //Writing solenoid
-  decayFunction[3].decayTime = 200;
+  decayFunction[3].decayTime = 400;
   decayFunction[3].prevTimerMillis = millis();
   decayFunction[3].run = true;
   
@@ -349,3 +367,100 @@ void writeLighting()
   decayFunction[4].prevTimerMillis = millis();
   decayFunction[4].run = true;
 }
+
+void windowControl()
+{
+  if (buttonNr[buttonA].longpressFlag == true)
+  { 
+    windowRunningDown = false;    
+    prevWindowMillis = millis();
+    windowRunningUp = true;
+    buttonNr[buttonA].longpressFlag = false;
+  }
+
+  else if (buttonNr[buttonB].longpressFlag == true)
+  { 
+    windowRunningUp = false;    
+    prevWindowMillis = millis();
+    windowRunningDown = true;
+    buttonNr[buttonB].longpressFlag = false;
+  }
+
+  if (windowRunningUp)
+  {
+    if (millis() - prevWindowMillis < windowDriveTime)
+    {
+      digitalWrite(hBridgeAPin, LOW);
+      digitalWrite(hBridgeBPin, HIGH);
+      
+      digitalWrite(windowGNDInterruptOutPin, HIGH);
+      digitalWrite(AuxLSOut1Pin, HIGH);
+      Serial.println("Writing Window Up");           
+    }
+    else 
+    {
+      digitalWrite(AuxLSOut1Pin, LOW);
+      digitalWrite(hBridgeAPin, LOW);
+      digitalWrite(hBridgeBPin, LOW);
+      digitalWrite(windowGNDInterruptOutPin, LOW);
+
+      buttonNr[buttonA].longpressFlag = false;
+      windowRunningUp = false;      
+      
+    }
+  }
+
+  else if (windowRunningDown)
+  {
+    if (millis() - prevWindowMillis < windowDriveTime)
+    {
+      digitalWrite(hBridgeAPin, HIGH);
+      digitalWrite(hBridgeBPin, LOW);
+      
+      digitalWrite(windowGNDInterruptOutPin, HIGH);
+      digitalWrite(AuxLSOut1Pin, HIGH);
+      Serial.println("Writing Window Down");           
+    }
+    else 
+    {
+      digitalWrite(AuxLSOut1Pin, LOW);
+      digitalWrite(hBridgeAPin, LOW);
+      digitalWrite(hBridgeBPin, LOW);
+      digitalWrite(windowGNDInterruptOutPin, LOW);
+
+      buttonNr[buttonB].longpressFlag = false;
+      windowRunningDown = false;
+    }
+  }
+
+  Serial.print("Currentsense: ");
+  Serial.println(analogRead(hBridgeCurrentSensInPin));
+    
+  currentReadings[currentReadingIndex] = analogRead(keyInPin);
+  
+  int currentSenseTotal = 0;
+  for (int i = 0; i < amountOfCurrentReadings; i ++)
+  {
+    currentSenseTotal = currentSenseTotal +  currentReadings[i];
+    Serial.print(" , ");
+    Serial.print(currentReadings[i]);
+  }
+  Serial.print(", CurrentSenseTotal: ");
+  Serial.print(currentSenseTotal);
+  
+  currentSenseAverage = currentSenseTotal / amountOfCurrentReadings;
+  
+  Serial.print(" , CurrentSenseAverage: ");
+  Serial.print(currentSenseAverage);
+  
+  currentReadingIndex ++;
+  if (currentReadingIndex > amountOfCurrentReadings) 
+  {
+    currentReadingIndex = 0;    
+  }
+
+  Serial.print(" ,currentreadingIndex: ");
+  Serial.println(currentReadingIndex);
+}         
+       
+  
