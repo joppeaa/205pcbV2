@@ -6,7 +6,7 @@
 #define amountOfTimers 7
 
 unsigned long prevFastLoopMillis;                                             //Main loop timers
-const unsigned fastLoopMax = 30;  
+const unsigned fastLoopMax = 10;  
 
 unsigned long prevSlowLoopMillis;
 const unsigned slowLoopMax = 1000;
@@ -63,6 +63,11 @@ void setup() {
   pinMode(rcIn1Pin, INPUT_PULLDOWN);
   pinMode(rcIn0Pin, INPUT_PULLDOWN);
 
+  attachInterrupt(digitalPinToInterrupt(rcIn3Pin), interruptA, CHANGE);  
+  attachInterrupt(digitalPinToInterrupt(rcIn2Pin), interruptB, CHANGE);  
+  attachInterrupt(digitalPinToInterrupt(rcIn1Pin), interruptC, CHANGE);  
+  attachInterrupt(digitalPinToInterrupt(rcIn0Pin), interruptD, CHANGE);  
+  
   pinMode(pwmOutPin, OUTPUT);
   pinMode(keyInPin, INPUT);
   pinMode(rpmInPin, INPUT);
@@ -92,10 +97,10 @@ void setup() {
   writeoutputsLOW();                                          //Writing all outputs LOW
   delay(400);                                                  
   
-  buttonNr[0].modulePin = rcIn0Pin;
-  buttonNr[1].modulePin = rcIn1Pin;
-  buttonNr[2].modulePin = rcIn2Pin;
-  buttonNr[3].modulePin = rcIn3Pin;
+  buttonNr[0].modulePin = rcIn0Pin;         //D
+  buttonNr[1].modulePin = rcIn1Pin;         //C
+  buttonNr[2].modulePin = rcIn2Pin;         //B
+  buttonNr[3].modulePin = rcIn3Pin;         //A
   
   buttonNr[0].id = 1;   //D
   buttonNr[1].id = 2;   //C
@@ -136,11 +141,6 @@ void loop()
 
     carFinderHandler();
 
-    
-
-    DEBUG_SERIAL.print("D0 value: ");
-    DEBUG_SERIAL.println(digitalRead(15));
-
     prevFastLoopMillis = millis();                        //resetting maindelay timer
   }
           
@@ -175,7 +175,7 @@ void checkremoteInput(remoteModule &buttonToCheck)
       flashLED(1);
     }
   }
-  if(buttonToCheck.isPressing == true && buttonToCheck.isLongDetected == false)
+  else if(buttonToCheck.isPressing == true && buttonToCheck.isLongDetected == false)
   {
     //pressDurationA = millis() - buttonToCheck.pressedTime;
     if(millis() - buttonToCheck.pressedTime > LONG_PRESS_MIN) 
@@ -184,7 +184,7 @@ void checkremoteInput(remoteModule &buttonToCheck)
       DEBUG_SERIAL.println(buttonToCheck.id);
       buttonToCheck.isLongDetected = true;
       buttonToCheck.longpressFlag = true;
-      flashLED(10);
+      flashLED(5);
     }
   }
   buttonToCheck.lastState = buttonToCheck.currentState;
@@ -320,12 +320,12 @@ void carFinderHandler()                               //Long press to find car; 
   if (buttonNr[0].longpressFlag == true)
   {
     decayFunction[1].repeatTimes = 20;                     //Flashing indicators
-    decayFunction[1].decayTime = 400;
+    decayFunction[1].decayTime = 300;
     decayFunction[1].prevTimerMillis = millis();
     decayFunction[1].run = true;
 
     decayFunction[0].repeatTimes = 20;                     //Flashing lights
-    decayFunction[0].decayTime = 400;
+    decayFunction[0].decayTime = 300;
     decayFunction[0].prevTimerMillis = millis();
     decayFunction[0].run = true;
 
@@ -340,7 +340,11 @@ void carFinderHandler()                               //Long press to find car; 
 
 void engineStateHandler()                             //Checking if engine is running by measuring battery voltage
 {
-  if (analogRead(keyInPin) > 3550)
+  long measuredVoltage = map(analogRead(keyInPin), 0, 4960, 0, 15);
+  DEBUG_SERIAL.print("MeasuredVoltage: ");
+  DEBUG_SERIAL.println(measuredVoltage);
+
+  if (measuredVoltage > 13)
   {
     digitalWrite(engineOnRelayOutPin, HIGH);
     digitalWrite(mirrorheatOutPin, HIGH);
@@ -469,6 +473,30 @@ void windowControl()
 
   DEBUG_SERIAL.print(" ,currentreadingIndex: ");
   DEBUG_SERIAL.println(currentReadingIndex);
-}         
-       
+} 
+
+  // buttonNr[0].id = 1;   //D
+  // buttonNr[1].id = 2;   //C
+  // buttonNr[2].id = 3;   //B
+  // buttonNr[3].id = 4;   //A
+
+void interruptA()
+{
+  buttonNr[3].currentState = digitalRead(buttonNr[3].modulePin);
+}
+
+void interruptB()
+{
+  buttonNr[2].currentState = digitalRead(buttonNr[2].modulePin);
+}
+
+void interruptC()
+{
+  buttonNr[1].currentState = digitalRead(buttonNr[1].modulePin);  
+}
+
+void interruptD()
+{
+  buttonNr[0].currentState = digitalRead(buttonNr[0].modulePin);  
+}
   
