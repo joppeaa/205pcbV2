@@ -1,3 +1,6 @@
+#define DEBUG true  //set to true for debug output, false for no debug output
+#define DEBUG_SERIAL if(DEBUG)Serial
+
 #include "pinDeclarations.h"
 
 #define amountOfTimers 7
@@ -48,7 +51,7 @@ struct decayOutput
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);
+  DEBUG_SERIAL.begin(115200);
   
   for (int i; i <= amountOfCurrentReadings; i ++)
   {
@@ -135,8 +138,8 @@ void loop()
 
     
 
-    Serial.print("D0 value: ");
-    Serial.println(digitalRead(15));
+    DEBUG_SERIAL.print("D0 value: ");
+    DEBUG_SERIAL.println(digitalRead(15));
 
     prevFastLoopMillis = millis();                        //resetting maindelay timer
   }
@@ -153,21 +156,21 @@ void loop()
 void checkremoteInput(remoteModule &buttonToCheck)
 {
   buttonToCheck.currentState = digitalRead(buttonToCheck.modulePin);
-if(buttonToCheck.lastState == LOW && buttonToCheck.currentState == HIGH)                    //button is pressed
+  if(buttonToCheck.lastState == LOW && buttonToCheck.currentState == HIGH)                    //button is pressed
   {
     buttonToCheck.pressedTime = millis();
     buttonToCheck.isPressing = true;
     buttonToCheck.isLongDetected = false;
   }
-else if(buttonToCheck.lastState == HIGH && buttonToCheck.currentState == LOW)               //button is released
+  else if(buttonToCheck.lastState == HIGH && buttonToCheck.currentState == LOW)               //button is released
   { 
     buttonToCheck.isPressing = false;
     buttonToCheck.releasedTime = millis();
     //pressDurationA = buttonToCheck.releasedTime - buttonToCheck.pressedTime;
     if(buttonToCheck.releasedTime - buttonToCheck.pressedTime < LONG_PRESS_MIN)
     {
-  Serial.print("A short press is detected on input: ");                       //Short press detected
-      Serial.println(buttonToCheck.id);
+  DEBUG_SERIAL.print("A short press is detected on input: ");                       //Short press detected
+      DEBUG_SERIAL.println(buttonToCheck.id);
       buttonToCheck.shortpressFlag = true;
       flashLED(1);
     }
@@ -177,8 +180,8 @@ else if(buttonToCheck.lastState == HIGH && buttonToCheck.currentState == LOW)   
     //pressDurationA = millis() - buttonToCheck.pressedTime;
     if(millis() - buttonToCheck.pressedTime > LONG_PRESS_MIN) 
     {
-      Serial.print("A long press is detected on input: ");                     //Long press detected
-      Serial.println(buttonToCheck.id);
+      DEBUG_SERIAL.print("A long press is detected on input: ");                     //Long press detected
+      DEBUG_SERIAL.println(buttonToCheck.id);
       buttonToCheck.isLongDetected = true;
       buttonToCheck.longpressFlag = true;
       flashLED(10);
@@ -197,20 +200,20 @@ void flashLED(int timesToFlash)
 
 void checkforLock()
 {
-  Serial.println("Checking for lock");
+  DEBUG_SERIAL.println("Checking for lock");
   if (buttonNr[buttonA].shortpressFlag == true)
   {
-    Serial.println("Lockrequest detected");
+    DEBUG_SERIAL.println("Lockrequest detected");
     lockCar();
   }
 }
 
 void checkforUnlock()
 {
-  Serial.println("Checking for unlock");
+  DEBUG_SERIAL.println("Checking for unlock");
   if (buttonNr[buttonB].shortpressFlag == true)
   {
-    Serial.println("Unlockrequest detected");
+    DEBUG_SERIAL.println("Unlockrequest detected");
     unlockCar();
   }
 }
@@ -236,8 +239,8 @@ void checkOutputTimers(decayOutput &timerToCheck)
         digitalWrite(timerToCheck.outputPin, LOW);
         timerToCheck.prevTimerMillis = millis();
         timerToCheck.repeatCounter ++;
-        Serial.print("repeatCounter");
-        Serial.println(timerToCheck.repeatCounter);      
+        DEBUG_SERIAL.print("repeatCounter");
+        DEBUG_SERIAL.println(timerToCheck.repeatCounter);      
       }
       
     }
@@ -317,9 +320,14 @@ void carFinderHandler()                               //Long press to find car; 
   if (buttonNr[0].longpressFlag == true)
   {
     decayFunction[1].repeatTimes = 20;                     //Flashing indicators
-    decayFunction[1].decayTime = 250;
+    decayFunction[1].decayTime = 400;
     decayFunction[1].prevTimerMillis = millis();
     decayFunction[1].run = true;
+
+    decayFunction[0].repeatTimes = 20;                     //Flashing lights
+    decayFunction[0].decayTime = 400;
+    decayFunction[0].prevTimerMillis = millis();
+    decayFunction[0].run = true;
 
     decayFunction[6].repeatTimes = 4;                     //sounding horn
     decayFunction[6].decayTime = 65;
@@ -332,7 +340,7 @@ void carFinderHandler()                               //Long press to find car; 
 
 void engineStateHandler()                             //Checking if engine is running by measuring battery voltage
 {
-  if (analogRead(keyInPin) > 3850)
+  if (analogRead(keyInPin) > 3550)
   {
     digitalWrite(engineOnRelayOutPin, HIGH);
     digitalWrite(mirrorheatOutPin, HIGH);
@@ -357,13 +365,13 @@ void writeLighting()
 {
   decayFunction[0].repeatCounter = 0;
   decayFunction[0].repeatTimes = 1;                     //Writing Lights
-  decayFunction[0].decayTime = 10000;
+  decayFunction[0].decayTime = 20000;
   decayFunction[0].prevTimerMillis = millis();
   decayFunction[0].run = true;
 
   decayFunction[4].repeatCounter = 0;
   decayFunction[4].repeatTimes = 1;                     //Writing Cabin
-  decayFunction[4].decayTime = 10000;
+  decayFunction[4].decayTime = 20000;
   decayFunction[4].prevTimerMillis = millis();
   decayFunction[4].run = true;
 }
@@ -395,7 +403,7 @@ void windowControl()
       
       digitalWrite(windowGNDInterruptOutPin, HIGH);
       digitalWrite(AuxLSOut1Pin, HIGH);
-      Serial.println("Writing Window Up");           
+      DEBUG_SERIAL.println("Writing Window Up");           
     }
     else 
     {
@@ -419,7 +427,7 @@ void windowControl()
       
       digitalWrite(windowGNDInterruptOutPin, HIGH);
       digitalWrite(AuxLSOut1Pin, HIGH);
-      Serial.println("Writing Window Down");           
+      DEBUG_SERIAL.println("Writing Window Down");           
     }
     else 
     {
@@ -433,25 +441,25 @@ void windowControl()
     }
   }
 
-  Serial.print("Currentsense: ");
-  Serial.println(analogRead(hBridgeCurrentSensInPin));
+  DEBUG_SERIAL.print("Currentsense: ");
+  DEBUG_SERIAL.println(analogRead(hBridgeCurrentSensInPin));
     
-  currentReadings[currentReadingIndex] = analogRead(keyInPin);
+  currentReadings[currentReadingIndex] = analogRead(hBridgeCurrentSensInPin);
   
   int currentSenseTotal = 0;
   for (int i = 0; i < amountOfCurrentReadings; i ++)
   {
     currentSenseTotal = currentSenseTotal +  currentReadings[i];
-    Serial.print(" , ");
-    Serial.print(currentReadings[i]);
+    DEBUG_SERIAL.print(" , ");
+    DEBUG_SERIAL.print(currentReadings[i]);
   }
-  Serial.print(", CurrentSenseTotal: ");
-  Serial.print(currentSenseTotal);
+  DEBUG_SERIAL.print(", CurrentSenseTotal: ");
+  DEBUG_SERIAL.print(currentSenseTotal);
   
   currentSenseAverage = currentSenseTotal / amountOfCurrentReadings;
   
-  Serial.print(" , CurrentSenseAverage: ");
-  Serial.print(currentSenseAverage);
+  DEBUG_SERIAL.print(" , CurrentSenseAverage: ");
+  DEBUG_SERIAL.print(currentSenseAverage);
   
   currentReadingIndex ++;
   if (currentReadingIndex > amountOfCurrentReadings) 
@@ -459,8 +467,8 @@ void windowControl()
     currentReadingIndex = 0;    
   }
 
-  Serial.print(" ,currentreadingIndex: ");
-  Serial.println(currentReadingIndex);
+  DEBUG_SERIAL.print(" ,currentreadingIndex: ");
+  DEBUG_SERIAL.println(currentReadingIndex);
 }         
        
   
