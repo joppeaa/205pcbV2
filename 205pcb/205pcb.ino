@@ -264,7 +264,7 @@ void lockCar()
 
   decayFunction[6].repeatCounter = 0;
   decayFunction[6].repeatTimes = 1;                     //Writing horn
-  decayFunction[6].decayTime = 60;
+  decayFunction[6].decayTime = 30;
   decayFunction[6].prevTimerMillis = millis();
   decayFunction[6].run = true;
 
@@ -344,7 +344,7 @@ void engineStateHandler()                             //Checking if engine is ru
   DEBUG_SERIAL.print("MeasuredVoltage: ");
   DEBUG_SERIAL.println(measuredVoltage);
 
-  if (measuredVoltage > 13)
+  if (measuredVoltage > 13.5)
   {
     digitalWrite(engineOnRelayOutPin, HIGH);
     digitalWrite(mirrorheatOutPin, HIGH);
